@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+
+# Raw, extracted, and generated health data must remain local.
+data/raw/*
+data/extracted/synthea/*
+data/bronze/*
+
+!data/extracted/synthea/.gitkeep
+!data/bronze/.gitkeep
