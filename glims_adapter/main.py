@@ -36,7 +36,13 @@ def _resolve_path(value: str) -> Path:
 def _zip_dir() -> Path:
     configured = os.getenv("SYNTHEA_ZIP_DIR")
     if configured:
-        return _resolve_path(configured)
+        configured_path = _resolve_path(configured)
+        if list(configured_path.glob("*.zip")):
+            return configured_path
+        LOGGER.warning(
+            "Configured SYNTHEA_ZIP_DIR has no ZIP files: %s. Trying known local layouts.",
+            configured_path,
+        )
 
     candidates = [
         PROJECT_ROOT / "data/raw/synthea_zips",
@@ -44,7 +50,15 @@ def _zip_dir() -> Path:
         PROJECT_ROOT.parent / "data/raw/synthea_zips",
         PROJECT_ROOT.parent / "data/raw/sythea_zips",
     ]
-    return next((path for path in candidates if list(path.glob("*.zip"))), candidates[0])
+    discovered = next((path for path in candidates if list(path.glob("*.zip"))), None)
+    if discovered:
+        LOGGER.info("Discovered Synthea ZIP directory: %s", discovered)
+        return discovered
+
+    checked = ", ".join(str(path) for path in candidates)
+    raise FileNotFoundError(
+        "No Synthea ZIP files found. Checked configured and known paths: {}".format(checked)
+    )
 
 
 def _model_json(event: GlimsLabResultEvent) -> str:

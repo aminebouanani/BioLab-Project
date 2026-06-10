@@ -3,9 +3,11 @@
 import tempfile
 import unittest
 from datetime import datetime, timezone
+from unittest.mock import patch
 from pathlib import Path
 
 from glims_adapter.glims_mapper import map_to_glims_event, pseudonymize_patient_id
+from glims_adapter.main import _zip_dir
 from glims_adapter.schemas import NormalizedLabResult
 from glims_adapter.synthea_csv_reader import find_csv_pair
 
@@ -61,6 +63,20 @@ class CsvDetectionTests(unittest.TestCase):
             (csv_dir / "observations.csv").touch()
 
             self.assertEqual(find_csv_pair(root), (csv_dir / "patients.csv", csv_dir / "observations.csv"))
+
+
+class ZipDirectoryTests(unittest.TestCase):
+    def test_missing_configured_path_falls_back_to_known_layout(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_root = Path(temp_dir) / "BioLab-Project"
+            sibling_zip_dir = project_root.parent / "data" / "raw" / "sythea_zips"
+            sibling_zip_dir.mkdir(parents=True)
+            (sibling_zip_dir / "synthea.zip").touch()
+
+            with patch("glims_adapter.main.PROJECT_ROOT", project_root), patch.dict(
+                "os.environ", {"SYNTHEA_ZIP_DIR": "data/raw/synthea_zips"}
+            ):
+                self.assertEqual(_zip_dir(), sibling_zip_dir)
 
 
 if __name__ == "__main__":

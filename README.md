@@ -47,6 +47,9 @@ outside the repository:
 SYNTHEA_ZIP_DIR=C:\path\to\synthea_zips
 ```
 
+If the configured directory is missing, the adapter also checks common sibling
+`data/raw/synthea_zips/` and legacy `data/raw/sythea_zips/` layouts.
+
 ## Run
 
 From the repository root:
