@@ -78,3 +78,21 @@ abnormal_flag, validation_status, result_datetime
 The internal normalized schema isolates source readers from the public event
 schema, making the mapper ready for later Kafka or Azure Event Hubs publishing
 without changing ingestion logic.
+
+## Sample Data
+
+Full generated health-style data remains local and is not pushed to GitHub. A
+small sample of 100 fake GLIMS-like events is included in
+`samples/glims_lab_results_sample.jsonl` only to show the event schema.
+
+Regenerate the full local dataset with:
+
+```powershell
+python -m glims_adapter.main
+```
+
+Regenerate the committable sample with:
+
+```powershell
+python scripts/create_sample_dataset.py
+```

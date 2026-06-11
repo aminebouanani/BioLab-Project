@@ -3,11 +3,16 @@ __pycache__/
 .env
 .venv/
 venv/
+*.db
+app_state/
 
 # Raw, extracted, and generated health data must remain local.
-data/raw/*
-data/extracted/synthea/*
-data/bronze/*
+data/raw/**
+data/extracted/**
+data/bronze/**
+data/silver/**
+data/gold/**
 
-!data/extracted/synthea/.gitkeep
-!data/bronze/.gitkeep
+# Keep empty data-directory placeholders, but never generated data.
+!data/**/
+!data/**/.gitkeep
