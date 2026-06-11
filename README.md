@@ -2,7 +2,7 @@
 
 Cloud-native post-analytical biological reporting project. This first component
 adapts local Synthea laboratory data into pseudonymized, fake GLIMS-like
-`LAB_RESULT` events. It does not yet include Kafka, Spark, Azure, AI, or a
+`LAB_RESULT_CREATED` events. It does not yet include Kafka, Spark, Azure, AI, or a
 frontend.
 
 ## What the adapter does
@@ -67,10 +67,13 @@ written. CSV is preferred whenever a matching `patients.csv` and
 Each output line is a validated JSON object containing:
 
 ```text
-event_id, source_system, event_type, patient_id, order_id, specimen_id,
-test_code, loinc_code, test_name, value, unit, reference_range, abnormal_flag,
-validation_status, result_datetime
+event_id, source_system, origin_source, event_type, patient_id, order_id,
+specimen_id, test_code, loinc_code, test_name, value, unit, reference_range,
+abnormal_flag, validation_status, result_datetime
 ```
+
+`source_system` is `GLIMS_SIM`, `event_type` is `LAB_RESULT_CREATED`, and
+`origin_source` remains `SYNTHEA` to preserve source lineage.
 
 The internal normalized schema isolates source readers from the public event
 schema, making the mapper ready for later Kafka or Azure Event Hubs publishing

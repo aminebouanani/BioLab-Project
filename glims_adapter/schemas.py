@@ -35,11 +35,12 @@ class NormalizedLabResult(AdapterModel):
 
 
 class GlimsLabResultEvent(AdapterModel):
-    """Public GLIMS-like LAB_RESULT event written to the bronze layer."""
+    """Public simulated GLIMS lab-result-created event written to bronze."""
 
     event_id: str = Field(min_length=1)
-    source_system: str = "SYNTHEA"
-    event_type: str = "LAB_RESULT"
+    source_system: str = "GLIMS_SIM"
+    origin_source: str = "SYNTHEA"
+    event_type: str = "LAB_RESULT_CREATED"
     patient_id: str = Field(min_length=1)
     order_id: str = Field(min_length=1)
     specimen_id: str = Field(min_length=1)

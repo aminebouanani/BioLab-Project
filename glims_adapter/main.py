@@ -108,7 +108,7 @@ def run() -> int:
         results = read_fhir_lab_results(json_paths)
 
     count = _write_events(results, output_path, hmac_secret)
-    LOGGER.info("Wrote %d GLIMS-like LAB_RESULT events to %s", count, output_path)
+    LOGGER.info("Wrote %d GLIMS_SIM LAB_RESULT_CREATED events to %s", count, output_path)
     return count
 
 

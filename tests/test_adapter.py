@@ -42,7 +42,9 @@ class GlimsMapperTests(unittest.TestCase):
         self.assertNotIn("source_patient_id", payload)
         self.assertNotIn("source_observation_id", payload)
         self.assertNotEqual(payload["patient_id"], self.result.source_patient_id)
-        self.assertEqual(payload["event_type"], "LAB_RESULT")
+        self.assertEqual(payload["source_system"], "GLIMS_SIM")
+        self.assertEqual(payload["origin_source"], "SYNTHEA")
+        self.assertEqual(payload["event_type"], "LAB_RESULT_CREATED")
 
     def test_mapping_is_stable_for_reprocessing(self):
         first = map_to_glims_event(self.result, "a" * 32)
