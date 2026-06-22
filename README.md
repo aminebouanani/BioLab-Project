@@ -112,7 +112,14 @@ local file is not present, it falls back to
 Run it from the repository root:
 
 ```powershell
+cd C:\Users\Hp\Desktop\BioLab\BioLab-Project
 uvicorn fake_glims_api.app.main:app --reload
+```
+
+If your terminal is currently in the parent `BioLab` folder, run:
+
+```powershell
+uvicorn --app-dir BioLab-Project fake_glims_api.app.main:app --reload
 ```
 
 Endpoints:
