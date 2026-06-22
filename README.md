@@ -96,3 +96,44 @@ Regenerate the committable sample with:
 ```powershell
 python scripts/create_sample_dataset.py
 ```
+
+## Fake GLIMS API
+
+The Fake GLIMS API simulates the source/integration layer of a real GLIMS/LIS.
+It reads fake GLIMS-like lab-result events from the local bronze JSONL file and
+exposes patients, orders, results, modified results, and simulated updates over
+HTTP. This layer does not process Bronze/Silver/Gold data, generate reports, run
+AI logic, publish to Kafka, or connect to Spark or Azure.
+
+The API loads events from `data/bronze/glims_lab_results.jsonl`. If the full
+local file is not present, it falls back to
+`samples/glims_lab_results_sample.jsonl`.
+
+Run it from the repository root:
+
+```powershell
+uvicorn fake_glims_api.app.main:app --reload
+```
+
+Endpoints:
+
+```text
+GET  /health
+GET  /patients
+GET  /patients/{patient_id}/orders
+GET  /patients/{patient_id}/results
+GET  /orders/{order_id}/results
+GET  /results?modified_after=2020-01-01T00:00:00Z
+POST /simulate/new-result
+POST /simulate/update-result
+POST /simulate/validate-result
+POST /stream/patient/{patient_id}
+```
+
+The API exposes only pseudonymized `patient_id` values already present in the
+fake GLIMS events. It adds stable `result_id` values when missing and uses
+`modified_at` timestamps for polling-style simulations.
+
+`POST /stream/patient/{patient_id}` currently returns the events that would be
+streamed and includes `kafka_publishing_enabled: false`. Kafka publishing is not
+implemented yet.
