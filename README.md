@@ -125,6 +125,7 @@ uvicorn --app-dir BioLab-Project fake_glims_api.app.main:app --reload
 Endpoints:
 
 ```text
+GET  /
 GET  /health
 GET  /patients
 GET  /patients/{patient_id}/orders

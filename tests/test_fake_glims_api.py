@@ -44,6 +44,13 @@ def request(method, path, params=None):
 
 
 class FakeGlimsApiTests(unittest.TestCase):
+    def test_root_returns_api_info(self):
+        status, payload = request("GET", "/")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["service_name"], "fake-glims-api")
+        self.assertEqual(payload["docs_url"], "/docs")
+
     def test_health_returns_200(self):
         status, payload = request("GET", "/health")
 

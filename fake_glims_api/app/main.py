@@ -31,6 +31,17 @@ def create_app() -> FastAPI:
     app.include_router(simulate.router)
     app.include_router(stream.router)
 
+    @app.get("/")
+    def root():
+        return {
+            "service_name": "fake-glims-api",
+            "message": "BioLab Fake GLIMS API is running.",
+            "docs_url": "/docs",
+            "health_url": "/health",
+            "patients_url": "/patients",
+            "results_url": "/results",
+        }
+
     LOGGER.info("Fake GLIMS API initialized with %d events", event_store.count())
     return app
 
