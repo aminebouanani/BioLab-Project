@@ -2,8 +2,11 @@
 
 import asyncio
 import json
+import os
 import unittest
 from urllib.parse import urlencode
+
+os.environ["KAFKA_ENABLED"] = "false"
 
 from fake_glims_api.app.main import app
 
@@ -82,6 +85,16 @@ class FakeGlimsApiTests(unittest.TestCase):
         self.assertFalse(payload["kafka_publishing_enabled"])
         self.assertEqual(payload["patient_id"], patient_id)
         self.assertEqual(payload["events_count"], len(payload["events"]))
+        self.assertEqual(payload["published_count"], 0)
+
+    def test_stream_all_limit_has_kafka_disabled(self):
+        status, payload = request("POST", "/stream/all", params={"limit": 10})
+
+        self.assertEqual(status, 200)
+        self.assertFalse(payload["kafka_publishing_enabled"])
+        self.assertEqual(payload["events_count"], 10)
+        self.assertEqual(payload["published_count"], 0)
+        self.assertEqual(payload["topics_used"], [])
 
 
 if __name__ == "__main__":

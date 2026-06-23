@@ -2,8 +2,8 @@
 
 Cloud-native post-analytical biological reporting project. This first component
 adapts local Synthea laboratory data into pseudonymized, fake GLIMS-like
-`LAB_RESULT_CREATED` events. It does not yet include Kafka, Spark, Azure, AI, or a
-frontend.
+`LAB_RESULT_CREATED` events. Local Kafka-compatible streaming is available with
+Redpanda. The project does not yet include Spark, Azure, AI, or a frontend.
 
 ## What the adapter does
 
@@ -103,7 +103,7 @@ The Fake GLIMS API simulates the source/integration layer of a real GLIMS/LIS.
 It reads fake GLIMS-like lab-result events from the local bronze JSONL file and
 exposes patients, orders, results, modified results, and simulated updates over
 HTTP. This layer does not process Bronze/Silver/Gold data, generate reports, run
-AI logic, publish to Kafka, or connect to Spark or Azure.
+AI logic, or connect to Spark or Azure.
 
 The API loads events from `data/bronze/glims_lab_results.jsonl`. If the full
 local file is not present, it falls back to
@@ -136,12 +136,87 @@ POST /simulate/new-result
 POST /simulate/update-result
 POST /simulate/validate-result
 POST /stream/patient/{patient_id}
+POST /stream/all?limit=100
+POST /stream/modified?modified_after=2020-01-01T00:00:00Z
 ```
 
 The API exposes only pseudonymized `patient_id` values already present in the
 fake GLIMS events. It adds stable `result_id` values when missing and uses
 `modified_at` timestamps for polling-style simulations.
 
-`POST /stream/patient/{patient_id}` currently returns the events that would be
-streamed and includes `kafka_publishing_enabled: false`. Kafka publishing is not
-implemented yet.
+`POST /stream/patient/{patient_id}` returns the events that would be streamed.
+When `KAFKA_ENABLED=true`, stream endpoints publish to local Kafka/Redpanda
+topics; otherwise they return `kafka_publishing_enabled: false` and do not
+publish.
+
+## Local Kafka / Redpanda Streaming
+
+Redpanda provides a local Kafka-compatible broker for testing the integration
+path from the Fake GLIMS API into future streaming ingestion. This step only
+publishes fake GLIMS events to Kafka topics; Spark, Databricks, Azure, AI report
+generation, and dashboards are not implemented here.
+
+Start Redpanda and Redpanda Console:
+
+```powershell
+docker compose up -d
+```
+
+Redpanda listens on `localhost:9092`. Redpanda Console is exposed at
+`http://localhost:8080`.
+
+Create the Kafka topics:
+
+```powershell
+python scripts/create_kafka_topics.py
+```
+
+Topics:
+
+```text
+glims.patient
+glims.order
+glims.specimen
+glims.result
+glims.validation
+```
+
+Enable Kafka publishing in `.env`:
+
+```dotenv
+KAFKA_ENABLED=true
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+```
+
+Run the Fake GLIMS API:
+
+```powershell
+uvicorn fake_glims_api.app.main:app --reload
+```
+
+Stream one patient:
+
+```text
+POST /stream/patient/{patient_id}
+```
+
+Stream all currently loaded events, with an optional limit:
+
+```text
+POST /stream/all?limit=100
+```
+
+Stream modified events for polling-style GLIMS simulation:
+
+```text
+POST /stream/modified?modified_after=2020-01-01T00:00:00Z
+```
+
+Consume messages from a topic:
+
+```powershell
+python scripts/consume_kafka_topic.py --topic glims.result --max-messages 10
+```
+
+If `KAFKA_ENABLED=false`, the API remains fully usable and stream endpoints
+return the events that would be streamed without publishing anything.
