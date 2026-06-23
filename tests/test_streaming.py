@@ -23,12 +23,17 @@ class KafkaProducerRoutingTests(unittest.TestCase):
 
     def test_topic_routing(self):
         cases = [
-            ({"event_type": "PATIENT_UPDATED"}, GLIMS_PATIENT_TOPIC),
-            ({"event_type": "ORDER_CREATED"}, GLIMS_ORDER_TOPIC),
-            ({"event_type": "SPECIMEN_CREATED"}, GLIMS_SPECIMEN_TOPIC),
+            ({"event_type": "LAB_RESULT_CREATED", "validation_status": "FINAL"}, GLIMS_RESULT_TOPIC),
+            ({"event_type": "LAB_RESULT_UPDATED"}, GLIMS_RESULT_TOPIC),
+            ({"event_type": "LAB_RESULT"}, GLIMS_RESULT_TOPIC),
             ({"event_type": "LAB_RESULT_VALIDATED"}, GLIMS_VALIDATION_TOPIC),
-            ({"event_type": "LAB_RESULT_CREATED", "validation_status": "FINAL"}, GLIMS_VALIDATION_TOPIC),
-            ({"event_type": "LAB_RESULT_UPDATED", "validation_status": "PRELIMINARY"}, GLIMS_RESULT_TOPIC),
+            ({"event_type": "VALIDATION_UPDATED"}, GLIMS_VALIDATION_TOPIC),
+            ({"event_type": "PATIENT_UPDATED"}, GLIMS_PATIENT_TOPIC),
+            ({"event_type": "PATIENT_CREATED"}, GLIMS_PATIENT_TOPIC),
+            ({"event_type": "ORDER_CREATED"}, GLIMS_ORDER_TOPIC),
+            ({"event_type": "ORDER_UPDATED"}, GLIMS_ORDER_TOPIC),
+            ({"event_type": "SPECIMEN_CREATED"}, GLIMS_SPECIMEN_TOPIC),
+            ({"event_type": "SPECIMEN_UPDATED"}, GLIMS_SPECIMEN_TOPIC),
             ({"event_type": "UNKNOWN"}, GLIMS_RESULT_TOPIC),
         ]
 

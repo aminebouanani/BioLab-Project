@@ -55,7 +55,6 @@ class KafkaProducerService:
 
     def route_event_to_topic(self, event):
         event_type = str(event.get("event_type", "")).upper()
-        validation_status = str(event.get("validation_status", "")).upper()
 
         if "PATIENT" in event_type:
             return GLIMS_PATIENT_TOPIC
@@ -63,7 +62,7 @@ class KafkaProducerService:
             return GLIMS_ORDER_TOPIC
         if "SPECIMEN" in event_type:
             return GLIMS_SPECIMEN_TOPIC
-        if "VALIDATED" in event_type or validation_status == "FINAL":
+        if "VALIDATED" in event_type or "VALIDATION" in event_type:
             return GLIMS_VALIDATION_TOPIC
         if "LAB_RESULT" in event_type or "RESULT" in event_type:
             return GLIMS_RESULT_TOPIC
