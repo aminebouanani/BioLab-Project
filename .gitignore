@@ -5,6 +5,7 @@ __pycache__/
 venv/
 *.db
 app_state/
+hadoop/bin/*.exe
 
 # Raw, extracted, and generated health data must remain local.
 data/raw/**

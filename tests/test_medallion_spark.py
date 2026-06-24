@@ -7,7 +7,7 @@ from pathlib import Path
 try:
     from pyspark.sql import SparkSession
 
-    from pipelines.spark.config import java_major_version
+    from pipelines.spark.config import PROJECT_ROOT, has_winutils, java_major_version
     from pipelines.spark.gold_report_context import build_gold_report_context
     from pipelines.spark.silver_lab_results import build_silver_lab_results
 
@@ -16,10 +16,16 @@ except ImportError:
     PYSPARK_AVAILABLE = False
 
 JAVA_MAJOR_VERSION = java_major_version() if PYSPARK_AVAILABLE else None
-SPARK_RUNTIME_AVAILABLE = PYSPARK_AVAILABLE and JAVA_MAJOR_VERSION is not None and JAVA_MAJOR_VERSION <= 17
+WINUTILS_AVAILABLE = has_winutils(PROJECT_ROOT / "hadoop")
+SPARK_RUNTIME_AVAILABLE = (
+    PYSPARK_AVAILABLE
+    and JAVA_MAJOR_VERSION is not None
+    and JAVA_MAJOR_VERSION <= 17
+    and WINUTILS_AVAILABLE
+)
 
 
-@unittest.skipUnless(SPARK_RUNTIME_AVAILABLE, "pyspark requires Java 8, 11, or 17 for these tests")
+@unittest.skipUnless(SPARK_RUNTIME_AVAILABLE, "pyspark requires Java 8, 11, or 17 and hadoop/bin/winutils.exe")
 class MedallionSparkTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

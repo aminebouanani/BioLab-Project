@@ -264,6 +264,16 @@ java -version
 If it reports Java 21, 23, or newer, install a Java 17 JDK, set `JAVA_HOME` to
 that JDK, update `PATH`, then run the pipeline again.
 
+On Windows, Spark also needs Hadoop's `winutils.exe` for local file writes. Put
+`winutils.exe` here:
+
+```text
+hadoop/bin/winutils.exe
+```
+
+The executable is intentionally ignored by Git. You can also set `HADOOP_HOME`
+in `.env` to another folder that contains `bin/winutils.exe`.
+
 Run Kafka architecture mode:
 
 ```powershell

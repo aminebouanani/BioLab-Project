@@ -50,7 +50,18 @@ def java_major_version():
     return parse_java_major_version(completed.stderr or completed.stdout)
 
 
-def ensure_local_spark_runtime():
+def resolve_hadoop_home(config):
+    configured = os.getenv("HADOOP_HOME")
+    if configured:
+        return resolve_path(configured)
+    return PROJECT_ROOT / "hadoop"
+
+
+def has_winutils(hadoop_home):
+    return (hadoop_home / "bin" / "winutils.exe").is_file()
+
+
+def ensure_local_spark_runtime(config):
     """Prepare Windows-friendly PySpark defaults and validate Java compatibility."""
     os.environ.setdefault("PYSPARK_PYTHON", sys.executable)
     os.environ.setdefault("PYSPARK_DRIVER_PYTHON", sys.executable)
@@ -66,6 +77,19 @@ def ensure_local_spark_runtime():
             "which requires Java 8, 11, or 17. Install Java 17, set JAVA_HOME "
             "to that JDK, update PATH, then rerun the pipeline.".format(major)
         )
+
+    if os.name == "nt":
+        hadoop_home = config.hadoop_home
+        os.environ.setdefault("HADOOP_HOME", str(hadoop_home))
+        os.environ.setdefault("hadoop.home.dir", str(hadoop_home))
+        if not has_winutils(hadoop_home):
+            raise RuntimeError(
+                "Spark on Windows needs winutils.exe for local file writes. "
+                "Put winutils.exe at '{}', or set HADOOP_HOME to a folder that "
+                "contains bin\\winutils.exe, then rerun the pipeline.".format(
+                    hadoop_home / "bin" / "winutils.exe"
+                )
+            )
 
 
 class PipelineConfig:
@@ -87,6 +111,7 @@ class PipelineConfig:
         self.full_jsonl_path = resolve_path("data/bronze/glims_lab_results.jsonl")
         self.sample_jsonl_path = resolve_path("samples/glims_lab_results_sample.jsonl")
         self.reference_ranges_path = resolve_path("config/lab_reference_ranges.yml")
+        self.hadoop_home = resolve_hadoop_home(self)
         self.spark_extra_java_options = os.getenv(
             "SPARK_EXTRA_JAVA_OPTIONS",
             "-Djava.security.manager=allow",
@@ -94,7 +119,7 @@ class PipelineConfig:
 
 
 def create_spark_session(config):
-    ensure_local_spark_runtime()
+    ensure_local_spark_runtime(config)
     from pyspark.sql import SparkSession
 
     return (
