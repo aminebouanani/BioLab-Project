@@ -6,6 +6,7 @@ venv/
 *.db
 app_state/
 hadoop/bin/*.exe
+hadoop/bin/*.dll
 
 # Raw, extracted, and generated health data must remain local.
 data/raw/**

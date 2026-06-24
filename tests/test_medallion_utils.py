@@ -8,6 +8,7 @@ from pipelines.spark.utils import (
     parse_numeric_value,
 )
 from pipelines.spark.config import parse_java_major_version
+from pipelines.spark.config import prepend_path_once
 
 
 class MedallionUtilsTests(unittest.TestCase):
@@ -60,6 +61,15 @@ class MedallionUtilsTests(unittest.TestCase):
         self.assertEqual(parse_java_major_version('java version "1.8.0_402"'), 8)
         self.assertEqual(parse_java_major_version('openjdk version "17.0.11" 2024-04-16'), 17)
         self.assertEqual(parse_java_major_version('java version "23.0.1"'), 23)
+
+    def test_prepend_path_once(self):
+        import os
+        from unittest.mock import patch
+
+        with patch.dict(os.environ, {"PATH": "C:\\Existing"}, clear=False):
+            prepend_path_once("C:\\Hadoop\\bin")
+            prepend_path_once("C:\\Hadoop\\bin")
+            self.assertEqual(os.environ["PATH"].split(os.pathsep).count("C:\\Hadoop\\bin"), 1)
 
 
 if __name__ == "__main__":

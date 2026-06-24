@@ -61,6 +61,19 @@ def has_winutils(hadoop_home):
     return (hadoop_home / "bin" / "winutils.exe").is_file()
 
 
+def has_hadoop_dll(hadoop_home):
+    return (hadoop_home / "bin" / "hadoop.dll").is_file()
+
+
+def prepend_path_once(path):
+    path_text = str(path)
+    current_path = os.environ.get("PATH", "")
+    existing = [item for item in current_path.split(os.pathsep) if item]
+    normalized = [os.path.normcase(os.path.normpath(item)) for item in existing]
+    if os.path.normcase(os.path.normpath(path_text)) not in normalized:
+        os.environ["PATH"] = path_text + os.pathsep + current_path
+
+
 def ensure_local_spark_runtime(config):
     """Prepare Windows-friendly PySpark defaults and validate Java compatibility."""
     os.environ.setdefault("PYSPARK_PYTHON", sys.executable)
@@ -80,16 +93,25 @@ def ensure_local_spark_runtime(config):
 
     if os.name == "nt":
         hadoop_home = config.hadoop_home
+        hadoop_bin = hadoop_home / "bin"
         os.environ.setdefault("HADOOP_HOME", str(hadoop_home))
         os.environ.setdefault("hadoop.home.dir", str(hadoop_home))
+        missing_files = []
         if not has_winutils(hadoop_home):
+            missing_files.append(hadoop_bin / "winutils.exe")
+        if not has_hadoop_dll(hadoop_home):
+            missing_files.append(hadoop_bin / "hadoop.dll")
+        if missing_files:
             raise RuntimeError(
-                "Spark on Windows needs winutils.exe for local file writes. "
-                "Put winutils.exe at '{}', or set HADOOP_HOME to a folder that "
-                "contains bin\\winutils.exe, then rerun the pipeline.".format(
-                    hadoop_home / "bin" / "winutils.exe"
+                "Spark on Windows needs matching Hadoop native files for local writes. "
+                "Add these files from the same Hadoop 3.x winutils distribution: {}. "
+                "Either put them in '{}', or set HADOOP_HOME to a folder that contains "
+                "bin\\winutils.exe and bin\\hadoop.dll.".format(
+                    ", ".join(str(path) for path in missing_files),
+                    hadoop_bin,
                 )
             )
+        prepend_path_once(hadoop_bin)
 
 
 class PipelineConfig:
