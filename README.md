@@ -220,3 +220,62 @@ python scripts/consume_kafka_topic.py --topic glims.result --max-messages 10
 
 If `KAFKA_ENABLED=false`, the API remains fully usable and stream endpoints
 return the events that would be streamed without publishing anything.
+
+## Local PySpark Medallion Pipeline
+
+The local PySpark pipeline prepares fake GLIMS result events for future
+analytics and AI reporting. It writes three medallion layers locally:
+
+```text
+Bronze: raw parsed GLIMS events plus ingestion metadata
+Silver: cleaned, normalized, latest lab results with simple abnormal flags
+Gold: patient/order/specimen report context and dashboard KPIs
+```
+
+Outputs are written under:
+
+```text
+data/bronze/glims_events/
+data/silver/lab_results/
+data/gold/report_context/
+data/gold/dashboard_kpis/
+```
+
+These folders remain local and Git-ignored.
+
+Run JSONL development mode:
+
+```powershell
+python -m pipelines.spark.run_local_pipeline --source jsonl
+```
+
+JSONL mode reads `data/bronze/glims_lab_results.jsonl` when available and falls
+back to `samples/glims_lab_results_sample.jsonl`. It is the easiest local
+development path.
+
+Run Kafka architecture mode:
+
+```powershell
+docker compose up -d
+python scripts/create_kafka_topics.py
+uvicorn fake_glims_api.app.main:app --reload
+```
+
+Then stream events from the API:
+
+```text
+POST /stream/all?limit=100
+```
+
+Finally run:
+
+```powershell
+python -m pipelines.spark.run_local_pipeline --source kafka
+```
+
+Kafka mode reads from the local Redpanda topic `glims.result`. If Spark Kafka
+dependencies or the local broker are unavailable, the pipeline falls back to
+JSONL mode for development.
+
+The current Gold report context is marked `READY_FOR_AI` when it contains at
+least one lab result, but no AI report generation is implemented in this part.

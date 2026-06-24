@@ -1,0 +1,76 @@
+reference_ranges:
+  "2345-7":
+    name: Glucose
+    low: 70
+    high: 99
+    unit: mg/dL
+  "2339-0":
+    name: Glucose
+    low: 70
+    high: 99
+    unit: mg/dL
+  "718-7":
+    name: Hemoglobin
+    low: 12
+    high: 17.5
+    unit: g/dL
+  "6690-2":
+    name: Leukocytes
+    low: 4
+    high: 11
+    unit: 10*3/uL
+  "777-3":
+    name: Platelets
+    low: 150
+    high: 450
+    unit: 10*3/uL
+  "2160-0":
+    name: Creatinine
+    low: 0.6
+    high: 1.3
+    unit: mg/dL
+  "38483-4":
+    name: Creatinine
+    low: 0.6
+    high: 1.3
+    unit: mg/dL
+  "2951-2":
+    name: Sodium
+    low: 135
+    high: 145
+    unit: mmol/L
+  "2947-0":
+    name: Sodium
+    low: 135
+    high: 145
+    unit: mmol/L
+  "2823-3":
+    name: Potassium
+    low: 3.5
+    high: 5.1
+    unit: mmol/L
+  "6298-4":
+    name: Potassium
+    low: 3.5
+    high: 5.1
+    unit: mmol/L
+  "2093-3":
+    name: Cholesterol
+    low: 0
+    high: 200
+    unit: mg/dL
+  "18262-6":
+    name: LDL Cholesterol
+    low: 0
+    high: 130
+    unit: mg/dL
+  "2085-9":
+    name: HDL Cholesterol
+    low: 40
+    high: 100
+    unit: mg/dL
+  "4548-4":
+    name: Hemoglobin A1c
+    low: 4
+    high: 5.7
+    unit: "%"
