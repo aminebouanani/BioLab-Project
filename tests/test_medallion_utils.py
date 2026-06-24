@@ -7,6 +7,7 @@ from pipelines.spark.utils import (
     deterministic_context_hash,
     parse_numeric_value,
 )
+from pipelines.spark.config import parse_java_major_version
 
 
 class MedallionUtilsTests(unittest.TestCase):
@@ -54,6 +55,11 @@ class MedallionUtilsTests(unittest.TestCase):
         second = list(reversed(first))
 
         self.assertEqual(deterministic_context_hash(first), deterministic_context_hash(second))
+
+    def test_java_version_parser(self):
+        self.assertEqual(parse_java_major_version('java version "1.8.0_402"'), 8)
+        self.assertEqual(parse_java_major_version('openjdk version "17.0.11" 2024-04-16'), 17)
+        self.assertEqual(parse_java_major_version('java version "23.0.1"'), 23)
 
 
 if __name__ == "__main__":

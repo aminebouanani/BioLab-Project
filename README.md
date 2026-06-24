@@ -253,6 +253,17 @@ JSONL mode reads `data/bronze/glims_lab_results.jsonl` when available and falls
 back to `samples/glims_lab_results_sample.jsonl`. It is the easiest local
 development path.
 
+PySpark 3.3 with this project’s Python 3.7 environment requires Java 8, 11, or
+17. Java 21+ can fail during Spark startup with low-level Hadoop/Spark JVM
+errors. Check your Java version with:
+
+```powershell
+java -version
+```
+
+If it reports Java 21, 23, or newer, install a Java 17 JDK, set `JAVA_HOME` to
+that JDK, update `PATH`, then run the pipeline again.
+
 Run Kafka architecture mode:
 
 ```powershell
