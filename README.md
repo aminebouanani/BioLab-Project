@@ -303,3 +303,65 @@ JSONL mode for development.
 
 The current Gold report context is marked `READY_FOR_AI` when it contains at
 least one lab result, but no AI report generation is implemented in this part.
+
+## AI Backend and Report-first Workflow
+
+The AI backend reads Gold report contexts from `data/gold/report_context/`,
+generates AI draft biological reports with a mock MedGemma provider, stores
+reports and report versions in a local SQLite application database, and enforces
+the report-first workflow.
+
+The chatbot is locked until a report exists. A biologist must generate an AI
+draft report first; only then can `/reports/{report_id}/chat` be used for that
+report. If the Gold context changes and the stored report context hash no
+longer matches, the report is marked `OUTDATED`, validation is blocked, and chat
+is blocked until regeneration.
+
+The local database lives at:
+
+```text
+app_state/biolab_local.db
+```
+
+`app_state/` remains Git-ignored.
+
+The mock provider in `ai_backend/app/ai_providers/mock_medgemma.py` creates a
+professional structured draft using only pseudonymized IDs and Gold context
+fields. It does not provide definitive diagnoses and can later be replaced by a
+real local or cloud provider such as `local_medgemma.py` or
+`azure_medgemma.py`.
+
+Run the AI backend:
+
+```powershell
+uvicorn ai_backend.app.main:app --reload --port 8001
+```
+
+Example workflow:
+
+```text
+1. Run the PySpark medallion pipeline first.
+2. Start the AI backend.
+3. GET  /cases
+4. POST /reports/generate
+5. GET  /reports/{report_id}
+6. POST /reports/{report_id}/chat
+7. POST /reports/{report_id}/validate
+```
+
+Useful endpoints:
+
+```text
+GET  /health
+GET  /cases
+GET  /cases/{patient_id}/{order_id}?specimen_id=...
+POST /reports/generate
+POST /reports/{report_id}/regenerate
+POST /reports/{report_id}/check-outdated
+POST /reports/{report_id}/validate
+POST /reports/{report_id}/reject
+GET  /reports
+GET  /reports/{report_id}
+POST /reports/{report_id}/chat
+GET  /reports/{report_id}/chat
+```
