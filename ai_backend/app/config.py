@@ -44,6 +44,9 @@ class Settings:
         self.gold_report_context_path = resolve_path(
             os.getenv("GOLD_REPORT_CONTEXT_PATH", "data/gold/report_context")
         )
+        self.generated_reports_path = resolve_path(
+            os.getenv("GENERATED_REPORTS_PATH", "app_state/generated_reports")
+        )
         self.ai_provider = os.getenv("AI_PROVIDER", "mock_medgemma")
         self.ai_provider_fallback_to_mock = _as_bool(
             os.getenv("AI_PROVIDER_FALLBACK_TO_MOCK", "true")

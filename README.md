@@ -448,3 +448,70 @@ Azure migration:
 ```text
 Fake GLIMS API -> Kafka/Redpanda -> PySpark Gold -> AI Backend -> Remote MedGemma -> SQLite report workflow
 ```
+
+## Final PDF Report Export
+
+The final report export step turns a validated AI-assisted report into a
+printable PDF for the biologist. The workflow remains report-first and
+validation-first:
+
+```text
+Gold context -> AI draft report -> biologist validation -> final PDF export
+```
+
+Official PDFs are generated only when the report status is
+`BIOLOGIST_VALIDATED`. Reports in `AI_DRAFT`, `REJECTED`, or `OUTDATED` status
+are blocked from official PDF generation. If the current Gold `context_hash`
+does not match the report version's `source_context_hash`, the report is marked
+`OUTDATED` and PDF export is blocked until the report is regenerated and
+validated again.
+
+PDFs are stored locally under:
+
+```text
+app_state/generated_reports/
+```
+
+`app_state/` is Git-ignored, so generated PDFs and the local SQLite database are
+not pushed to GitHub.
+
+Run the normal local workflow first:
+
+```powershell
+python -m pipelines.spark.run_local_pipeline --source jsonl
+uvicorn ai_backend.app.main:app --reload --port 8001
+```
+
+Then use the AI backend:
+
+```text
+1. POST /reports/generate
+2. POST /reports/{report_id}/validate
+3. POST /reports/{report_id}/generate-pdf
+4. GET  /reports/{report_id}/pdf
+5. GET  /reports/{report_id}/pdf/download
+```
+
+For development only, a draft endpoint is available:
+
+```text
+POST /reports/{report_id}/generate-draft-pdf
+```
+
+Draft PDFs are marked:
+
+```text
+DRAFT - NOT VALIDATED - NOT FOR CLINICAL USE
+```
+
+Export metadata can be listed with:
+
+```text
+GET /pdf-exports
+```
+
+The PDF includes case identifiers, laboratory context counts, result table,
+AI-assisted interpretation, validation information, traceability metadata, and
+a medical disclaimer. The local filesystem storage boundary is intentionally
+small so it can later be replaced by Azure Blob Storage or Azure Data Lake
+Storage Gen2 without changing the report workflow.

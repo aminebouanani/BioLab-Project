@@ -30,6 +30,7 @@ class Report(Base):
     updated_at = Column(DateTime, nullable=False, default=utc_now, onupdate=utc_now)
 
     versions = relationship("ReportVersion", back_populates="report", cascade="all, delete-orphan")
+    exports = relationship("ReportExport", back_populates="report", cascade="all, delete-orphan")
 
 
 class ReportVersion(Base):
@@ -45,6 +46,26 @@ class ReportVersion(Base):
     created_at = Column(DateTime, nullable=False, default=utc_now)
 
     report = relationship("Report", back_populates="versions")
+    exports = relationship("ReportExport", back_populates="report_version")
+
+
+class ReportExport(Base):
+    __tablename__ = "report_exports"
+
+    export_id = Column(String, primary_key=True, default=lambda: new_id("EXP"))
+    report_id = Column(String, ForeignKey("reports.report_id"), nullable=False, index=True)
+    report_version_id = Column(String, ForeignKey("report_versions.report_version_id"), nullable=False, index=True)
+    pdf_filename = Column(String, nullable=False)
+    pdf_path = Column(String, nullable=False)
+    export_status = Column(String, nullable=False, default="GENERATED")
+    source_context_hash = Column(String, nullable=False)
+    generated_at = Column(DateTime, nullable=False, default=utc_now)
+    generated_by = Column(String, nullable=True)
+    file_size_bytes = Column(Integer, nullable=True)
+    export_type = Column(String, nullable=False, default="FINAL_PDF")
+
+    report = relationship("Report", back_populates="exports")
+    report_version = relationship("ReportVersion", back_populates="exports")
 
 
 class ChatSession(Base):

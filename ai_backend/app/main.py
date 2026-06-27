@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from ai_backend.app.ai_providers.factory import create_ai_provider
 from ai_backend.app.config import Settings
 from ai_backend.app.database import create_session_factory
-from ai_backend.app.routers import cases, chat, health, reports
+from ai_backend.app.routers import cases, chat, health, pdf_exports, reports
 from ai_backend.app.services.gold_context_service import GoldContextService
 
 
@@ -28,6 +28,7 @@ def create_app(settings=None) -> FastAPI:
     app.include_router(cases.router)
     app.include_router(reports.router)
     app.include_router(chat.router)
+    app.include_router(pdf_exports.router)
 
     @app.get("/")
     def root():

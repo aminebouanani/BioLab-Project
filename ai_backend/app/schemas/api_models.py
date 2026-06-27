@@ -114,3 +114,17 @@ class ChatMessageResponse(ApiModel):
     role: str
     message: str
     created_at: datetime
+
+
+class PdfExportResponse(ApiModel):
+    export_id: str
+    report_id: str
+    report_version_id: str
+    pdf_filename: str
+    export_status: str
+    export_type: str
+    source_context_hash: str
+    generated_at: datetime
+    generated_by: Optional[str] = None
+    file_size_bytes: Optional[int] = None
+    download_url: str
