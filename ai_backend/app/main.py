@@ -1,6 +1,7 @@
 """FastAPI entry point for the BioLab AI backend."""
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from ai_backend.app.ai_providers.factory import create_ai_provider
 from ai_backend.app.config import Settings
@@ -15,6 +16,13 @@ def create_app(settings=None) -> FastAPI:
         title="BioLab AI Backend",
         description="Report-first AI backend using local Gold context and configurable MedGemma providers.",
         version="0.1.0",
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     SessionLocal, engine = create_session_factory(settings.database_url)

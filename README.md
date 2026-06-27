@@ -515,3 +515,66 @@ AI-assisted interpretation, validation information, traceability metadata, and
 a medical disclaimer. The local filesystem storage boundary is intentionally
 small so it can later be replaced by Azure Blob Storage or Azure Data Lake
 Storage Gen2 without changing the report workflow.
+
+## React Biologist Dashboard
+
+The React dashboard gives the biologist a simple end-to-end interface for the
+local BioLab workflow. It connects to the AI backend, lists Gold report-ready
+cases, opens a patient/order/specimen case, displays lab results and abnormal
+flags, generates AI draft reports, unlocks chat after report generation,
+validates or rejects reports, generates final PDFs after validation, and
+downloads exported PDFs.
+
+Run the AI backend first:
+
+```powershell
+uvicorn ai_backend.app.main:app --reload --port 8001
+```
+
+The frontend expects the backend at:
+
+```dotenv
+VITE_AI_BACKEND_URL=http://127.0.0.1:8001
+```
+
+Run the dashboard:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open:
+
+```text
+http://127.0.0.1:5173/cases
+```
+
+Dashboard workflow:
+
+```text
+1. Open /cases
+2. Open a case
+3. Generate AI report
+4. Chat after report generation
+5. Validate report
+6. Generate final PDF
+7. Download PDF
+```
+
+Workflow locks are shown visually:
+
+```text
+Chat is locked until an AI report exists.
+OUTDATED reports block chat, validation, and PDF export until regenerated.
+REJECTED reports block final PDF generation.
+Final PDF generation is enabled only for BIOLOGIST_VALIDATED reports.
+```
+
+The backend allows local dashboard CORS origins:
+
+```text
+http://localhost:5173
+http://127.0.0.1:5173
+```
