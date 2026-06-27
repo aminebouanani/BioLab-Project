@@ -1,6 +1,6 @@
 """Report-scoped chat service."""
 
-from ai_backend.app.ai_providers.base import AIProvider
+from ai_backend.app.ai_providers.base import AIProvider, AIProviderError
 from ai_backend.app.models.db_models import ChatMessage, ChatSession
 from ai_backend.app.services.audit_service import AuditService
 from ai_backend.app.services.gold_context_service import GoldContextService
@@ -35,13 +35,16 @@ class ChatService:
             raise ReportWorkflowError("Report is OUTDATED and must be regenerated before using chatbot.")
 
         context = self.gold_context_service.get_case(report.patient_id, report.order_id, report.specimen_id)
-        answer = self.ai_provider.answer_question(latest.report_text, context, question)
+        try:
+            provider_result = self.ai_provider.answer_question(latest.report_text, context, question)
+        except AIProviderError as exc:
+            raise ReportWorkflowError(str(exc))
         session = self._session_for_report(report)
         self.db.add(ChatMessage(chat_session_id=session.chat_session_id, report_id=report.report_id, role="user", message=question))
-        self.db.add(ChatMessage(chat_session_id=session.chat_session_id, report_id=report.report_id, role="assistant", message=answer))
+        self.db.add(ChatMessage(chat_session_id=session.chat_session_id, report_id=report.report_id, role="assistant", message=provider_result.text))
         self.audit.log("CHAT_QUESTION_ANSWERED", "report", report.report_id, report.patient_id, report.order_id, {"question": question})
         self.db.commit()
-        return answer
+        return provider_result
 
     def history(self, report_id: str):
         report = self.report_service.get_report(report_id)

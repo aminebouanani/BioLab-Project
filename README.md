@@ -365,3 +365,86 @@ GET  /reports/{report_id}
 POST /reports/{report_id}/chat
 GET  /reports/{report_id}/chat
 ```
+
+## Remote MedGemma Provider and Real LLM Local Test
+
+The local PC does not need to run MedGemma. For pre-Azure testing, the AI
+backend can call a remote GPU-backed MedGemma service over HTTP. The first
+runtime target is Google Colab GPU, but the backend is cloud-agnostic: later,
+the same `MEDGEMMA_API_URL` can point to Azure ML, Azure AI Foundry, an Azure
+GPU VM, or another Azure-hosted inference endpoint.
+
+The mock provider remains available for development:
+
+```dotenv
+AI_PROVIDER=mock_medgemma
+```
+
+For final local pre-Azure testing, use strict real-LLM mode so the backend does
+not silently fall back to the mock:
+
+```powershell
+$env:AI_PROVIDER="remote_medgemma"
+$env:AI_PROVIDER_FALLBACK_TO_MOCK="false"
+$env:REQUIRE_REAL_LLM="true"
+$env:MEDGEMMA_API_URL="<remote_gpu_server_url>"
+uvicorn ai_backend.app.main:app --reload --port 8001
+```
+
+When `REQUIRE_REAL_LLM=true`, startup and report/chat calls fail clearly if the
+remote MedGemma server is unreachable, returns invalid data, does not identify
+itself as `remote_medgemma`, or does not return `is_real_llm=true`.
+
+The remote server contract is:
+
+```text
+GET  /health
+POST /generate-report
+POST /answer-question
+```
+
+The server must return:
+
+```json
+{
+  "provider": "remote_medgemma",
+  "is_real_llm": true,
+  "model_name": "medgemma-4b-it"
+}
+```
+
+Start a Colab GPU server using:
+
+```text
+medgemma_server/colab_quickstart.md
+medgemma_server/colab_medgemma_server.ipynb
+```
+
+Then test only the remote provider:
+
+```powershell
+python scripts/test_remote_medgemma_provider.py
+```
+
+Test the full local app with the real remote LLM:
+
+```powershell
+python scripts/test_full_app_real_llm.py
+```
+
+That final script checks:
+
+```text
+AI Backend /health says active_provider=remote_medgemma
+REQUIRE_REAL_LLM is true
+report generation used remote_medgemma
+chat used remote_medgemma
+is_real_llm=true
+```
+
+This proves the full local architecture works with a real remote LLM before the
+Azure migration:
+
+```text
+Fake GLIMS API -> Kafka/Redpanda -> PySpark Gold -> AI Backend -> Remote MedGemma -> SQLite report workflow
+```

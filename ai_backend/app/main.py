@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 
-from ai_backend.app.ai_providers.mock_medgemma import MockMedGemmaProvider
+from ai_backend.app.ai_providers.factory import create_ai_provider
 from ai_backend.app.config import Settings
 from ai_backend.app.database import create_session_factory
 from ai_backend.app.routers import cases, chat, health, reports
@@ -13,7 +13,7 @@ def create_app(settings=None) -> FastAPI:
     settings = settings or Settings()
     app = FastAPI(
         title="BioLab AI Backend",
-        description="Report-first AI backend using local Gold context and a mock MedGemma provider.",
+        description="Report-first AI backend using local Gold context and configurable MedGemma providers.",
         version="0.1.0",
     )
 
@@ -22,7 +22,7 @@ def create_app(settings=None) -> FastAPI:
     app.state.SessionLocal = SessionLocal
     app.state.engine = engine
     app.state.gold_context_service = GoldContextService(settings.gold_report_context_path)
-    app.state.ai_provider = MockMedGemmaProvider()
+    app.state.ai_provider = create_ai_provider(settings)
 
     app.include_router(health.router)
     app.include_router(cases.router)

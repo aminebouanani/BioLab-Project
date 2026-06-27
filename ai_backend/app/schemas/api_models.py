@@ -15,6 +15,16 @@ class HealthResponse(ApiModel):
     database_status: str
     gold_context_path: str
     ai_provider: str
+    configured_ai_provider: str
+    active_provider: str
+    medgemma_api_url: Optional[str] = None
+    remote_provider_reachable: bool
+    fallback_to_mock: bool
+    require_real_llm: bool
+    provider_ready: bool
+    model_name: Optional[str] = None
+    is_real_llm: bool
+    provider_error: Optional[str] = None
 
 
 class CaseContext(ApiModel):
@@ -77,6 +87,10 @@ class GenerateReportResponse(ApiModel):
     status: str
     source_context_hash: str
     report_text: str
+    model_name: str
+    ai_provider: str
+    provider_used: str
+    is_real_llm: bool
 
 
 class OutdatedCheckResponse(ApiModel):
@@ -90,6 +104,10 @@ class OutdatedCheckResponse(ApiModel):
 class ChatResponse(ApiModel):
     report_id: str
     answer: str
+    ai_provider: str
+    model_name: str
+    provider_used: str
+    is_real_llm: bool
 
 
 class ChatMessageResponse(ApiModel):

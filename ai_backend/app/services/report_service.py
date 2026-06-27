@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ai_backend.app.ai_providers.base import AIProvider
+from ai_backend.app.ai_providers.base import AIProvider, AIProviderError
 from ai_backend.app.models.db_models import BiologistAction, Report, ReportVersion
 from ai_backend.app.services.audit_service import AuditService
 from ai_backend.app.services.gold_context_service import GoldContextService
@@ -54,13 +54,16 @@ class ReportService:
 
     def _create_version(self, report: Report, context, status="AI_DRAFT"):
         version_number = report.current_version + 1
-        report_text = self.ai_provider.generate_report(context)
+        try:
+            provider_result = self.ai_provider.generate_report(context)
+        except AIProviderError as exc:
+            raise ReportWorkflowError(str(exc))
         version = ReportVersion(
             report_id=report.report_id,
             version_number=version_number,
             source_context_hash=context["context_hash"],
-            report_text=report_text,
-            model_name=self.ai_provider.model_name,
+            report_text=provider_result.text,
+            model_name=provider_result.storage_model_name,
             status=status,
         )
         report.current_version = version_number
@@ -68,7 +71,7 @@ class ReportService:
         self.db.add(report)
         self.db.add(version)
         self.db.flush()
-        return version
+        return version, provider_result
 
     def generate_report(self, patient_id: str, order_id: str, specimen_id: Optional[str] = None):
         context = self.gold_context_service.get_case(patient_id, order_id, specimen_id)
@@ -82,18 +85,18 @@ class ReportService:
             )
             self.db.add(report)
             self.db.flush()
-        version = self._create_version(report, context)
+        version, provider_result = self._create_version(report, context)
         self.audit.log("REPORT_GENERATED", "report", report.report_id, report.patient_id, report.order_id, {"version": version.version_number})
         self.db.commit()
-        return report, version
+        return report, version, provider_result
 
     def regenerate_report(self, report_id: str):
         report = self.get_report(report_id)
         context = self.gold_context_service.get_case(report.patient_id, report.order_id, report.specimen_id)
-        version = self._create_version(report, context)
+        version, provider_result = self._create_version(report, context)
         self.audit.log("REPORT_REGENERATED", "report", report.report_id, report.patient_id, report.order_id, {"version": version.version_number})
         self.db.commit()
-        return report, version
+        return report, version, provider_result
 
     def validate_report(self, report_id: str, comment: Optional[str] = None):
         report = self.get_report(report_id)

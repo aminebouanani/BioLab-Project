@@ -27,7 +27,7 @@ def _report_service(request: Request, db):
 def generate_report(payload: GenerateReportRequest, request: Request):
     with request.app.state.SessionLocal() as db:
         try:
-            report, version = _report_service(request, db).generate_report(
+            report, version, provider_result = _report_service(request, db).generate_report(
                 payload.patient_id, payload.order_id, payload.specimen_id
             )
             return GenerateReportResponse(
@@ -36,27 +36,39 @@ def generate_report(payload: GenerateReportRequest, request: Request):
                 status=report.status,
                 source_context_hash=version.source_context_hash,
                 report_text=version.report_text,
+                model_name=provider_result.model_name,
+                ai_provider=request.app.state.settings.ai_provider,
+                provider_used=provider_result.provider_used,
+                is_real_llm=provider_result.is_real_llm,
             )
         except GoldContextError as exc:
             raise HTTPException(status_code=404, detail=str(exc))
+        except ReportWorkflowError as exc:
+            raise HTTPException(status_code=502, detail=str(exc))
 
 
 @router.post("/{report_id}/regenerate", response_model=GenerateReportResponse)
 def regenerate_report(report_id: str, request: Request):
     with request.app.state.SessionLocal() as db:
         try:
-            report, version = _report_service(request, db).regenerate_report(report_id)
+            report, version, provider_result = _report_service(request, db).regenerate_report(report_id)
             return GenerateReportResponse(
                 report_id=report.report_id,
                 version_number=version.version_number,
                 status=report.status,
                 source_context_hash=version.source_context_hash,
                 report_text=version.report_text,
+                model_name=provider_result.model_name,
+                ai_provider=request.app.state.settings.ai_provider,
+                provider_used=provider_result.provider_used,
+                is_real_llm=provider_result.is_real_llm,
             )
         except ReportNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc))
         except GoldContextError as exc:
             raise HTTPException(status_code=409, detail=str(exc))
+        except ReportWorkflowError as exc:
+            raise HTTPException(status_code=502, detail=str(exc))
 
 
 @router.post("/{report_id}/validate", response_model=ReportResponse)

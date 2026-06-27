@@ -2,11 +2,13 @@
 
 from typing import Dict, List
 
-from ai_backend.app.ai_providers.base import AIProvider
+from ai_backend.app.ai_providers.base import AIProvider, AIProviderResult
 
 
 class MockMedGemmaProvider(AIProvider):
     model_name = "mock_medgemma"
+    provider_name = "mock_medgemma"
+    is_real_llm = False
 
     def _split_results(self, context: Dict):
         results = context.get("results") or []
@@ -36,7 +38,7 @@ class MockMedGemmaProvider(AIProvider):
 
     def generate_report(self, context: Dict) -> str:
         abnormal, normal, unknown = self._split_results(context)
-        return """AI Draft Biological Report
+        report_text = """AI Draft Biological Report
 
 Patient ID: {patient_id}
 Order ID: {order_id}
@@ -74,10 +76,16 @@ This is an AI draft requiring review and validation by a qualified biologist bef
             abnormal_results=self._format_results(abnormal),
             normal_results=self._format_results(normal, limit=5),
         )
+        return AIProviderResult(
+            text=report_text,
+            model_name=self.model_name,
+            provider_used=self.provider_name,
+            is_real_llm=self.is_real_llm,
+        )
 
     def answer_question(self, report_text: str, context: Dict, question: str) -> str:
         abnormal, normal, unknown = self._split_results(context)
-        return (
+        answer = (
             "Mock MedGemma answer based on the generated draft report and Gold context.\n\n"
             "Question: {question}\n\n"
             "Context-aware answer: This case contains {results_count} result(s), including "
@@ -91,4 +99,10 @@ This is an AI draft requiring review and validation by a qualified biologist bef
             abnormal_count=len(abnormal),
             normal_count=len(normal),
             unknown_count=len(unknown),
+        )
+        return AIProviderResult(
+            text=answer,
+            model_name=self.model_name,
+            provider_used=self.provider_name,
+            is_real_llm=self.is_real_llm,
         )

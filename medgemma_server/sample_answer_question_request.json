@@ -1,0 +1,28 @@
+{
+  "report_text": "AI Draft Biological Report\nCase identifiers: PAT-sample / ORD-sample / SPC-sample\nAbnormal findings: Glucose is elevated.",
+  "context": {
+    "patient_id": "PAT-sample",
+    "order_id": "ORD-sample",
+    "specimen_id": "SPC-sample",
+    "results_count": 1,
+    "abnormal_results_count": 1,
+    "normal_results_count": 0,
+    "unknown_flag_results_count": 0,
+    "validation_status_summary": "FINAL",
+    "context_hash": "sample-context-hash",
+    "results": [
+      {
+        "test_name": "Glucose",
+        "loinc_code": "2345-7",
+        "value_raw": "160",
+        "value_numeric": 160.0,
+        "unit": "mg/dL",
+        "reference_range": "70-110",
+        "abnormal_flag": "H",
+        "validation_status": "FINAL",
+        "result_datetime": "2026-01-01T10:00:00Z"
+      }
+    ]
+  },
+  "question": "Which result is abnormal?"
+}

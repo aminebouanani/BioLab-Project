@@ -45,3 +45,14 @@ class Settings:
             os.getenv("GOLD_REPORT_CONTEXT_PATH", "data/gold/report_context")
         )
         self.ai_provider = os.getenv("AI_PROVIDER", "mock_medgemma")
+        self.ai_provider_fallback_to_mock = _as_bool(
+            os.getenv("AI_PROVIDER_FALLBACK_TO_MOCK", "true")
+        )
+        self.require_real_llm = _as_bool(os.getenv("REQUIRE_REAL_LLM", "false"))
+        self.medgemma_api_url = os.getenv("MEDGEMMA_API_URL", "http://localhost:9000").rstrip("/")
+        self.medgemma_api_key = os.getenv("MEDGEMMA_API_KEY", "")
+        self.medgemma_timeout_seconds = int(os.getenv("MEDGEMMA_TIMEOUT_SECONDS", "180"))
+
+
+def _as_bool(value):
+    return str(value).strip().lower() in ("1", "true", "yes", "on")
