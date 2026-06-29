@@ -57,7 +57,7 @@ Make sure your Hugging Face account has access to the MedGemma model.
 ```python
 import os, subprocess, time
 os.environ["MEDGEMMA_MODEL_ID"] = "google/medgemma-4b-it"
-os.environ["MEDGEMMA_MAX_NEW_TOKENS"] = "700"
+os.environ["MEDGEMMA_MAX_NEW_TOKENS"] = "512"
 os.environ["MEDGEMMA_TEMPERATURE"] = "0.2"
 
 server = subprocess.Popen([

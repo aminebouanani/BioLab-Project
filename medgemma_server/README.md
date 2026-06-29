@@ -22,7 +22,7 @@ It does not fake successful real-LLM responses.
 
 ```bash
 MEDGEMMA_MODEL_ID=google/medgemma-4b-it
-MEDGEMMA_MAX_NEW_TOKENS=700
+MEDGEMMA_MAX_NEW_TOKENS=512
 MEDGEMMA_TEMPERATURE=0.2
 MEDGEMMA_DEVICE=auto
 MEDGEMMA_API_KEY=
@@ -30,6 +30,8 @@ HF_TOKEN=
 ```
 
 `HF_TOKEN` may be required depending on the model access terms on Hugging Face.
+The server uses the MedGemma image-text-to-text Transformers interface
+(`AutoProcessor` and `AutoModelForImageTextToText`) for text-only prompts.
 
 ## Run
 

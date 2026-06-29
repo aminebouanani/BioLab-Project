@@ -10,14 +10,14 @@ from typing import Any, Dict, Optional
 
 import torch
 from fastapi import Depends, FastAPI, Header, HTTPException
-from pydantic import BaseModel, Field
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from pydantic import BaseModel
+from transformers import AutoModelForImageTextToText, AutoProcessor
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("medgemma_server")
 
 MODEL_ID = os.getenv("MEDGEMMA_MODEL_ID", "google/medgemma-4b-it")
-MAX_NEW_TOKENS = int(os.getenv("MEDGEMMA_MAX_NEW_TOKENS", "700"))
+MAX_NEW_TOKENS = int(os.getenv("MEDGEMMA_MAX_NEW_TOKENS", "512"))
 TEMPERATURE = float(os.getenv("MEDGEMMA_TEMPERATURE", "0.2"))
 DEVICE_SETTING = os.getenv("MEDGEMMA_DEVICE", "auto")
 API_KEY = os.getenv("MEDGEMMA_API_KEY", "")
@@ -29,7 +29,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
-tokenizer = None
+processor = None
 model = None
 model_load_error = None
 device_label = "auto"
@@ -117,25 +117,24 @@ def build_chat_prompt(report_text: str, context: Dict[str, Any], question: str, 
 
 
 def load_model():
-    global tokenizer, model, model_load_error, device_label
-    if model is not None and tokenizer is not None:
+    global processor, model, model_load_error, device_label
+    if model is not None and processor is not None:
         return
     try:
         logger.info("Loading MedGemma model: %s", MODEL_ID)
         cuda_available = torch.cuda.is_available()
-        dtype = torch.float16 if cuda_available else torch.float32
+        dtype = torch.bfloat16 if cuda_available else torch.float32
         device_label = "cuda" if cuda_available else "cpu"
         if DEVICE_SETTING != "auto":
             device_label = DEVICE_SETTING
         if not cuda_available:
             logger.warning("CUDA is not available. CPU inference will be very slow.")
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, token=HF_TOKEN or None)
-        model = AutoModelForCausalLM.from_pretrained(
+        processor = AutoProcessor.from_pretrained(MODEL_ID, token=HF_TOKEN or None)
+        model = AutoModelForImageTextToText.from_pretrained(
             MODEL_ID,
             token=HF_TOKEN or None,
             torch_dtype=dtype,
             device_map=DEVICE_SETTING,
-            trust_remote_code=True,
         )
         model.eval()
         model_load_error = None
@@ -151,24 +150,37 @@ def startup():
 
 
 def generate_text(prompt: str) -> str:
-    if model is None or tokenizer is None:
+    if model is None or processor is None:
         raise HTTPException(status_code=503, detail="MedGemma model is not loaded: {}".format(model_load_error))
     try:
-        inputs = tokenizer(prompt, return_tensors="pt")
+        messages = [
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": prompt}],
+            }
+        ]
+        inputs = processor.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            tokenize=True,
+            return_dict=True,
+            return_tensors="pt",
+        )
+        inputs = inputs.to(model.device)
         if torch.cuda.is_available():
-            inputs = {key: value.to("cuda") for key, value in inputs.items()}
+            inputs = inputs.to(dtype=torch.bfloat16)
+        input_len = inputs["input_ids"].shape[-1]
         do_sample = TEMPERATURE > 0
         generation_kwargs = {
             "max_new_tokens": MAX_NEW_TOKENS,
             "do_sample": do_sample,
-            "pad_token_id": tokenizer.eos_token_id,
         }
         if do_sample:
             generation_kwargs["temperature"] = TEMPERATURE
-        with torch.no_grad():
+        with torch.inference_mode():
             output_ids = model.generate(**inputs, **generation_kwargs)
-        generated_ids = output_ids[0][inputs["input_ids"].shape[-1]:]
-        return tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
+        generated_ids = output_ids[0][input_len:]
+        return processor.decode(generated_ids, skip_special_tokens=True).strip()
     except HTTPException:
         raise
     except Exception as exc:
@@ -178,7 +190,7 @@ def generate_text(prompt: str) -> str:
 
 @app.get("/health")
 def health(_: None = Depends(require_api_key)):
-    loaded = model is not None and tokenizer is not None
+    loaded = model is not None and processor is not None
     return {
         "service": "medgemma-server",
         "status": "ok" if loaded else "error",
