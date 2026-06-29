@@ -578,3 +578,85 @@ The backend allows local dashboard CORS origins:
 http://localhost:5173
 http://127.0.0.1:5173
 ```
+
+## End-to-End Local Pre-Azure Validation
+
+This validation step exists to prove the complete local architecture works
+before Azure migration. It checks that the project can run end-to-end with a
+real remote MedGemma LLM and does not silently fall back to the mock provider.
+
+The full validation flow is:
+
+```text
+Fake GLIMS API
+-> Kafka / Redpanda
+-> PySpark Bronze/Silver/Gold
+-> AI Backend
+-> Remote MedGemma real LLM
+-> AI report stored in SQLite
+-> Chatbot response from real LLM
+-> Biologist validation
+-> Final PDF generation
+-> PDF download
+-> React dashboard can use the same backend
+```
+
+Detailed demo docs live in:
+
+```text
+demo/README.md
+demo/run_local_stack.md
+demo/pre_azure_checklist.md
+demo/screenshots_checklist.md
+demo/expected_outputs.md
+```
+
+Check all services:
+
+```powershell
+python scripts/demo/check_services.py
+```
+
+Ensure Gold demo data exists:
+
+```powershell
+python scripts/demo/seed_demo_data.py --run-pipeline
+```
+
+Run the strict real-LLM validation:
+
+```powershell
+$env:AI_PROVIDER="remote_medgemma"
+$env:AI_PROVIDER_FALLBACK_TO_MOCK="false"
+$env:REQUIRE_REAL_LLM="true"
+$env:MEDGEMMA_API_URL="<remote_gpu_server_url>"
+python scripts/demo/run_pre_azure_validation.py
+```
+
+Generate a readable summary:
+
+```powershell
+python scripts/demo/generate_demo_summary.py
+```
+
+The validation proves mock was not used by checking:
+
+```text
+AI Backend /health active_provider=remote_medgemma
+AI Backend /health require_real_llm=true
+AI Backend /health is_real_llm=true
+Report generation provider_used=remote_medgemma
+Report generation is_real_llm=true
+Chat provider_used=remote_medgemma
+Chat is_real_llm=true
+```
+
+Reset local demo state when needed:
+
+```powershell
+python scripts/demo/reset_local_demo_state.py --yes
+```
+
+Generated validation evidence is written under `demo/output/`, which is
+Git-ignored. This local validation gives a concrete PASS/FAIL checkpoint before
+moving the same architecture to Azure-hosted services.
